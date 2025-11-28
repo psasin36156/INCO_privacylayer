@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoImage from './asset/images/logo.png';
 import nerdImage from './asset/images/nerd.png';
+import { Button } from './components/ui/button';
+import { Card, CardContent } from './components/ui/card';
+import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { Lock, Unlock, Eye, EyeOff, Zap } from 'lucide-react';
 
 // --- CUSTOM TAILWIND CONFIG & COLORS (Strictly from user's palette) ---
 // We define custom utility colors based on the provided palette for clarity and consistency.
@@ -23,7 +28,7 @@ const colors = {
 const PRIVACY_LEVELS = [
   {
     id: 1,
-    name: "1. Transparent (Current Blockchain)",
+    name: "1. Transparency (Current Blockchain)",
     sender: { state: "VISIBLE", label: "Public Address" },
     receiver: { state: "VISIBLE", label: "Public Address" },
     amount: { state: "VISIBLE", label: "Public Amount" },
@@ -33,7 +38,7 @@ const PRIVACY_LEVELS = [
   },
   {
     id: 2,
-    name: "2. Anonymous (Mixers / Obfuscated Identity)",
+    name: "2. Anonymity (Mixers / Obfuscated Identity)",
     sender: { state: "OBFUSCATED", label: "👤 Transaction Hash" },
     receiver: { state: "OBFUSCATED", label: "👤 Transaction Hash" },
     amount: { state: "VISIBLE", label: "Public Amount" },
@@ -43,7 +48,7 @@ const PRIVACY_LEVELS = [
   },
   {
     id: 3,
-    name: "3. Confidential (Inco Layer / cERC-20)",
+    name: "3. Confidentiality (Inco Layer / cERC-20)",
     sender: { state: "VISIBLE", label: "Public Address" },
     receiver: { state: "VISIBLE", label: "Public Address" },
     amount: { state: "ENCRYPTED", label: "🔒 Confidential Value" },
@@ -53,7 +58,7 @@ const PRIVACY_LEVELS = [
   },
   {
     id: 4,
-    name: "4. Fully Private (Maximum Secrecy)",
+    name: "4. Total privacy (Maximum Secrecy)",
     sender: { state: "ENCRYPTED", label: "🔒 Encrypted Data" },
     receiver: { state: "ENCRYPTED", label: "🔒 Encrypted Data" },
     amount: { state: "ENCRYPTED", label: "🔒 Encrypted Value" },
@@ -93,50 +98,65 @@ const formatAddress = (address) => {
 // Component for rendering a data cell with animation and masking logic
 const DataCell = ({ state, value, label, delay }) => {
   let content;
-  let baseClass = "p-3 font-mono text-sm sm:text-base transition-all duration-300 rounded-lg h-full flex items-center justify-center text-center border-2";
+  let icon;
+  let baseClass = "p-4 font-mono text-sm sm:text-base transition-all duration-300 rounded-lg h-full flex items-center justify-center text-center border-2 relative overflow-hidden backdrop-blur-md";
   let cellStyle = {};
 
   switch (state) {
     case 'VISIBLE':
       const displayValue = formatAddress(value);
       const isLongAddress = value && value.length > 20;
+      icon = <Eye className="w-4 h-4 mr-2 flex-shrink-0" style={{ color: colors['inco-blue'] }} />;
       content = (
-        <span 
-          style={{ color: colors['inco-dark'] }} 
-          className="font-medium break-all"
-          title={isLongAddress ? value : undefined}
-        >
-          {displayValue}
-        </span>
+        <div className="flex items-center justify-center gap-2">
+          {icon}
+          <span 
+            className="font-semibold break-all"
+            style={{ color: '#FFFFFF' }}
+            title={isLongAddress ? value : undefined}
+          >
+            {displayValue}
+          </span>
+        </div>
       );
       cellStyle = {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: `rgba(27, 62, 134, 0.5)`, // Darker, more opaque
         borderColor: colors['inco-blue']
       };
       break;
     case 'OBFUSCATED':
-      content = <span style={{ color: colors['inco-blue'] }} className="font-semibold">{label}</span>;
+      icon = <EyeOff className="w-4 h-4 mr-2 flex-shrink-0" style={{ color: colors['inco-light-blue'] }} />;
+      content = (
+        <div className="flex items-center justify-center gap-2">
+          {icon}
+          <span style={{ color: '#FFFFFF' }} className="font-semibold">{label}</span>
+        </div>
+      );
       cellStyle = {
-        backgroundColor: colors['inco-bg-light'],
+        backgroundColor: `rgba(54, 115, 245, 0.35)`, // More opaque
         borderColor: colors['inco-light-blue']
       };
       baseClass += ' text-sm';
       break;
     case 'ENCRYPTED':
-      // Use Inco brand blue colors for encrypted states
-      const accentColor = colors['inco-blue'];
-      content = <span style={{ color: accentColor }} className="font-semibold">{label}</span>;
+      icon = <Lock className="w-4 h-4 mr-2 flex-shrink-0 animate-pulse" style={{ color: colors['inco-light-blue'] }} />;
+      content = (
+        <div className="flex items-center justify-center gap-2">
+          {icon}
+          <span style={{ color: '#FFFFFF' }} className="font-bold">{label}</span>
+        </div>
+      );
       cellStyle = {
-        backgroundColor: colors['inco-bg-light'],
-        borderColor: accentColor,
+        backgroundColor: `rgba(54, 115, 245, 0.5)`, // More opaque with stronger color
+        borderColor: colors['inco-light-blue'],
         borderStyle: 'dashed'
       };
-      baseClass += ' text-sm';
+      baseClass += ' text-sm shadow-neon';
       break;
       default:
-      content = <span style={{ color: colors['inco-dark'] }}>N/A</span>;
+      content = <span style={{ color: '#FFFFFF' }}>N/A</span>;
       cellStyle = {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: `rgba(27, 62, 134, 0.4)`,
         borderColor: colors['inco-blue']
       };
   }
@@ -150,12 +170,29 @@ const DataCell = ({ state, value, label, delay }) => {
       className={baseClass}
       style={{
         ...cellStyle,
-        minWidth: 0, // Allow flex items to shrink
+        minWidth: 0,
         overflow: 'hidden',
         wordBreak: 'break-all'
       }}
     >
-      <div className="w-full overflow-hidden text-ellipsis">
+      {/* Corner decorations for futuristic look */}
+      <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2" style={{ borderColor: colors['inco-light-blue'], opacity: 0.6 }}></div>
+      <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2" style={{ borderColor: colors['inco-light-blue'], opacity: 0.6 }}></div>
+      
+      {/* Animated scan line for encrypted states */}
+      {state === 'ENCRYPTED' && (
+        <motion.div
+          className="absolute inset-x-0 h-px"
+          style={{ 
+            background: `linear-gradient(to right, transparent, ${colors['inco-light-blue']}, transparent)`,
+            boxShadow: `0 0 10px ${colors['inco-light-blue']}`
+          }}
+          animate={{ top: ['0%', '100%'] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        />
+      )}
+      
+      <div className="w-full overflow-hidden text-ellipsis relative z-10">
         {content}
       </div>
     </motion.div>
@@ -193,7 +230,7 @@ const generateNerdBackgroundItems = (count = 30) => {
       top: random(3) * 100,
       duration: 20 + random(4) * 40,
       delay: random(5) * 5,
-      opacity: 0.1 + random(6) * 0.2,
+      opacity: 0.25 + random(6) * 0.2,
       moveX: [
         0,
         (random(7) - 0.5) * 200,
@@ -309,11 +346,28 @@ export default function App() {
     // Apply dark blue background and ensure text is visible
     <div className={`min-h-screen font-sans p-4 sm:p-8 relative overflow-hidden`} style={{ backgroundColor: colors['inco-dark'] }}>
       
+      {/* Futuristic grid background */}
+      <div className="absolute inset-0 z-0 opacity-20" style={{
+        backgroundImage: `
+          linear-gradient(${colors['inco-blue']}40 1px, transparent 1px),
+          linear-gradient(90deg, ${colors['inco-blue']}40 1px, transparent 1px)
+        `,
+        backgroundSize: '50px 50px',
+      }}></div>
+
+      {/* Scanning line effect */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div 
+          className="absolute w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-30 animate-scan"
+          style={{ boxShadow: `0 0 20px ${colors['inco-blue']}` }}
+        ></div>
+      </div>
+
       {/* Background decoration with nerd image flooding effect */}
       <div 
         className="absolute inset-0 z-0 overflow-hidden"
         style={{
-          opacity: 0.4
+          opacity: 0.25
         }}
       >
         {nerdBackgroundItems.map((item) => (
@@ -347,6 +401,10 @@ export default function App() {
         ))}
       </div>
 
+      {/* Glowing orbs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse z-0"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary-light/20 rounded-full blur-3xl animate-pulse delay-1000 z-0"></div>
+
 
       <motion.header
         initial={{ y: -50, opacity: 0 }}
@@ -358,34 +416,64 @@ export default function App() {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 150, delay: 0.3 }}
-            className="mb-4 flex justify-center items-center"
+            className="mb-6 flex justify-center items-center relative"
         >
+            {/* Glowing ring around logo */}
+            <div className="absolute w-32 h-32 border-2 border-primary/30 rounded-full animate-ping"></div>
+            <div className="absolute w-28 h-28 border-2 border-primary/50 rounded-full animate-pulse"></div>
+            
             {/* Inco Logo Integration */}
             <motion.img 
                 src={logoImage} 
                 alt="Inco Logo" 
-                className="h-20 w-auto object-contain"
-                style={{ maxWidth: '200px' }}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 150, delay: 0.3 }}
+                className="h-20 w-auto object-contain relative z-10 drop-shadow-2xl"
+                style={{ 
+                  maxWidth: '200px',
+                  filter: `drop-shadow(0 0 20px ${colors['inco-blue']}80)`
+                }}
+                animate={{
+                  filter: [
+                    `drop-shadow(0 0 20px ${colors['inco-blue']}80)`,
+                    `drop-shadow(0 0 30px ${colors['inco-blue']}ff)`,
+                    `drop-shadow(0 0 20px ${colors['inco-blue']}80)`,
+                  ]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
             /> 
         </motion.div>
-        <h1 
-            className={`text-4xl sm:text-5xl font-black tracking-tight`}
-            style={{ 
-                color: colors['inco-bg-light'],
-                fontFamily: "'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                fontWeight: 900,
-                letterSpacing: '-0.02em',
-                textShadow: `0 2px 4px rgba(0,0,0,0.3)`
-            }}
+        <div className="relative">
+          {/* Cyber brackets */}
+          <div className="absolute -left-8 top-1/2 -translate-y-1/2 text-primary text-2xl font-bold opacity-50 hidden md:block">[</div>
+          <div className="absolute -right-8 top-1/2 -translate-y-1/2 text-primary text-2xl font-bold opacity-50 hidden md:block">]</div>
+          
+          <h1 
+              className={`text-4xl sm:text-5xl md:text-6xl font-black tracking-tight`}
+              style={{ 
+                  color: colors['inco-bg-light'],
+                  fontFamily: "'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                  fontWeight: 900,
+                  letterSpacing: '-0.02em',
+                  textShadow: `0 0 20px ${colors['inco-blue']}80, 0 2px 4px rgba(0,0,0,0.3)`
+              }}
+          >
+            Inco Privacy Level Playground
+          </h1>
+        </div>
+        <motion.p 
+          className="mt-4 text-lg flex items-center justify-center gap-2" 
+          style={{ color: colors['inco-light-blue'] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
         >
-          Inco Privacy Level Playground
-        </h1>
-        <p className="mt-2 text-lg" style={{ color: colors['inco-light-blue'] }}>
+          <Lock className="w-5 h-5 animate-pulse" />
           Visualize Inco's Four Levels of Confidentiality
-        </p>
+          <Lock className="w-5 h-5 animate-pulse" />
+        </motion.p>
       </motion.header>
 
       {/* Input Form */}
@@ -397,86 +485,84 @@ export default function App() {
       >
         {/* Instruction Message */}
         <motion.div
-          className="mb-3 px-3 py-2 rounded border"
+          className="mb-4 px-4 py-3 rounded-lg border-l-4 backdrop-blur-xl relative overflow-hidden"
           style={{
-            backgroundColor: colors['inco-bg-light'],
-            borderColor: colors['inco-light-blue'],
-            opacity: 0.8
+            backgroundColor: `${colors['inco-bg-light']}20`,
+            borderLeftColor: colors['inco-light-blue'],
           }}
           initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 0.8, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <p className="text-xs md:text-sm text-center" style={{ color: colors['inco-dark'] }}>
-            💡 Simulation: Input any sender and receiver details to compare standard transparency vs. Inco's confidential encryption.
+          <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-primary/10 to-transparent"></div>
+          <p className="text-xs md:text-sm flex items-center gap-2" style={{ color: colors['inco-bg-light'] }}>
+            <Zap className="w-4 h-4 text-primary animate-pulse" />
+            <span className="font-medium">Simulation Mode:</span> Input sender and receiver details to compare blockchain transparency levels vs. Inco's confidential encryption.
           </p>
         </motion.div>
 
-      <motion.form
-        onSubmit={handleSubmit}
-        className={`p-6 backdrop-blur-sm rounded-xl shadow-2xl space-y-4`}
-        style={{
-          border: `2px solid ${colors['inco-blue']}`,
-          backgroundColor: colors['inco-bg-light']
-        }}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <InputGroup
-            label="Sender Address"
-            name="sender"
-            value={inputs.sender}
-            onChange={handleInputChange}
-            placeholder="e.g., 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
-            error={errors.sender}
-          />
-          <InputGroup
-            label="Receiver Address"
-            name="receiver"
-            value={inputs.receiver}
-            onChange={handleInputChange}
-            placeholder="e.g., 0x8ba1f109551bD432803012645Hac136c22C1727"
-            error={errors.receiver}
-          />
-          <InputGroup
-            label="Transaction Amount"
-            name="amount"
-            value={inputs.amount}
-            onChange={handleInputChange}
-            placeholder="e.g., 100.5 USDC"
-            error={errors.amount}
-          />
-        </div>
-        <div className='flex justify-center pt-2 gap-4'>
-            <motion.button
-                type="submit"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                style={{ 
-                    backgroundColor: colors['inco-blue'],
-                    color: '#FFFFFF'
-                }}
-                className={`w-full md:w-auto px-8 py-3 hover:opacity-90 rounded-lg font-semibold shadow-lg transition-colors disabled:opacity-50`}
-                disabled={isDemoActive}
-            >
-                {submittedData ? "Re-Run Simulation" : "Run Simulation"}
-            </motion.button>
-            {submittedData && (
-                <motion.button
-                    type="button"
-                    onClick={resetDemo}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    style={{ 
-                        backgroundColor: colors['inco-light-blue'],
-                        color: colors['inco-dark']
-                    }}
-                    className={`w-full md:w-auto px-8 py-3 hover:opacity-90 rounded-lg font-semibold shadow-lg transition-colors`}
+      <Card className="relative overflow-hidden">
+        {/* Animated border effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 animate-pulse pointer-events-none"></div>
+        
+        <CardContent className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <InputGroup
+                label="Sender Address"
+                name="sender"
+                value={inputs.sender}
+                onChange={handleInputChange}
+                placeholder="0x742d35Cc..."
+                error={errors.sender}
+              />
+              <InputGroup
+                label="Receiver Address"
+                name="receiver"
+                value={inputs.receiver}
+                onChange={handleInputChange}
+                placeholder="0x8ba1f109..."
+                error={errors.receiver}
+              />
+              <InputGroup
+                label="Transaction Amount"
+                name="amount"
+                value={inputs.amount}
+                onChange={handleInputChange}
+                placeholder="100.5 USDC"
+                error={errors.amount}
+              />
+            </div>
+            
+            <div className='flex justify-center pt-4 gap-4 flex-wrap'>
+                <Button
+                    type="submit"
+                    size="lg"
+                    disabled={isDemoActive}
+                    className="relative overflow-hidden group"
                 >
-                    Reset
-                </motion.button>
-            )}
-        </div>
-      </motion.form>
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    {submittedData ? "Re-Run Simulation" : "Run Simulation"}
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary-light/0 via-primary-light/50 to-primary-light/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                </Button>
+                {submittedData && (
+                    <Button
+                        type="button"
+                        onClick={resetDemo}
+                        variant="outline"
+                        size="lg"
+                        className="gap-2"
+                    >
+                        <Eye className="w-4 h-4" />
+                        Reset
+                    </Button>
+                )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
       </motion.div>
 
       {/* Output Table */}
@@ -484,64 +570,110 @@ export default function App() {
         {submittedData && (
           <motion.div
             key="results"
-            className="relative z-10 mt-12 max-w-6xl mx-auto"
+            className="relative z-10 mt-12 max-w-7xl mx-auto"
             initial="hidden"
             animate="visible"
             variants={containerVariants}
           >
-            <div className={`grid grid-cols-4 gap-4 text-center text-sm font-bold tracking-wider uppercase pb-3 border-b-2 sticky top-0 z-20 rounded-t-lg px-3 py-2`}
-                style={{ 
-                  color: colors['inco-dark'],
-                  backgroundColor: colors['inco-bg-light'],
-                  borderColor: colors['inco-blue'],
-                  gridTemplateColumns: '2fr 1fr 1fr 1fr' // Give more space to Privacy Level column
-                }}
-            >
-              <div>Privacy Level</div>
-              <div>Sender</div>
-              <div>Receiver</div>
-              <div>Amount</div>
-            </div>
+            {/* Futuristic Header */}
+            <Card className="mb-6 border-primary/60 bg-card/80">
+              <CardContent className="p-5">
+                <div className={`grid grid-cols-4 gap-4 text-center text-sm font-bold tracking-wider uppercase`}
+                    style={{ 
+                      color: '#FFFFFF',
+                      gridTemplateColumns: '2fr 1fr 1fr 1fr'
+                    }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-8 animate-pulse" style={{ backgroundColor: colors['inco-blue'] }}></div>
+                    <span style={{ color: colors['inco-light-blue'] }}>Privacy Level</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <Eye className="w-4 h-4" style={{ color: colors['inco-light-blue'] }} />
+                    <span style={{ color: '#FFFFFF' }}>Sender</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <Eye className="w-4 h-4" style={{ color: colors['inco-light-blue'] }} />
+                    <span style={{ color: '#FFFFFF' }}>Receiver</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <Zap className="w-4 h-4" style={{ color: colors['inco-light-blue'] }} />
+                    <span style={{ color: '#FFFFFF' }}>Amount</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
+            {/* Privacy Level Cards */}
             {PRIVACY_LEVELS.map((level, index) => (
               <motion.div
                 key={level.id}
                 variants={itemVariants}
-                className={`grid grid-cols-4 gap-4 py-4 px-3 mt-2 rounded-xl border-l-4 shadow-lg`}
-                style={{
-                  borderLeftColor: level.id === 1 ? colors['inco-dark'] : 
-                                   level.id === 2 ? colors['inco-light-blue'] :
-                                   level.id === 3 ? colors['inco-blue'] : colors['inco-light-blue'],
-                  backgroundColor: colors['inco-bg-light'],
-                  gridTemplateColumns: '2fr 1fr 1fr 1fr' // Match header column widths
-                }}
+                className="mb-4"
               >
-                {/* Level Name Column */}
-                <div className="flex flex-col justify-center items-start space-y-1">
-                  <span className="font-bold text-lg" style={{ color: colors['inco-dark'] }}>{level.name.split('(')[0].trim()}</span>
-                  <span className="text-xs italic" style={{ color: colors['inco-blue'] }}>({level.name.split('(')[1].replace(')', '').trim()})</span>
-                  <p className="text-xs mt-1" style={{ color: colors['inco-dark'], opacity: 0.8 }}>{level.description}</p>
-                </div>
-                
-                {/* Data Columns */}
-                <DataCell
-                  state={level.sender.state}
-                  value={submittedData.sender}
-                  label={level.sender.label}
-                  delay={index * 0.15 + 0.5}
-                />
-                <DataCell
-                  state={level.receiver.state}
-                  value={submittedData.receiver}
-                  label={level.receiver.label}
-                  delay={index * 0.15 + 0.6}
-                />
-                <DataCell
-                  state={level.amount.state}
-                  value={submittedData.amount}
-                  label={level.amount.label}
-                  delay={index * 0.15 + 0.7}
-                />
+                <Card 
+                  className={`relative overflow-hidden hover:scale-[1.01] transition-transform duration-300 border-primary/40 bg-card/70`}
+                  style={{
+                    borderLeftWidth: '6px',
+                    borderLeftColor: level.id === 1 ? '#EF4444' : 
+                                     level.id === 2 ? colors['inco-light-blue'] :
+                                     level.id === 3 ? colors['inco-blue'] : colors['inco-blue'],
+                  }}
+                >
+                  {/* Animated gradient overlay */}
+                  <div 
+                    className="absolute top-0 left-0 w-2 h-full opacity-50 pointer-events-none"
+                    style={{
+                      background: `linear-gradient(to bottom, ${colors['inco-blue']}00, ${colors['inco-blue']}ff, ${colors['inco-blue']}00)`,
+                      animation: 'scan 3s linear infinite'
+                    }}
+                  ></div>
+                  
+                  <CardContent className="p-5">
+                    <div className={`grid grid-cols-4 gap-4`}
+                      style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}
+                    >
+                      {/* Level Name Column */}
+                      <div className="flex flex-col justify-center items-start space-y-2 pr-4">
+                        <div className="flex items-center gap-3">
+                          {level.id === 1 && <Unlock className="w-5 h-5 flex-shrink-0" style={{ color: '#EF4444' }} />}
+                          {level.id === 2 && <EyeOff className="w-5 h-5 flex-shrink-0" style={{ color: colors['inco-light-blue'] }} />}
+                          {level.id === 3 && <Lock className="w-5 h-5 flex-shrink-0" style={{ color: colors['inco-blue'] }} />}
+                          {level.id === 4 && <Lock className="w-5 h-5 flex-shrink-0 animate-pulse" style={{ color: colors['inco-blue'] }} />}
+                          <span className="font-bold text-lg" style={{ color: '#FFFFFF' }}>
+                            {level.name.split('(')[0].trim()}
+                          </span>
+                        </div>
+                        <span className="text-xs italic pl-8" style={{ color: colors['inco-light-blue'] }}>
+                          ({level.name.split('(')[1]?.replace(')', '').trim() || ''})
+                        </span>
+                        <p className="text-xs mt-1 pl-8" style={{ color: colors['inco-light-blue'], opacity: 0.8 }}>
+                          {level.description}
+                        </p>
+                      </div>
+                      
+                      {/* Data Columns */}
+                      <DataCell
+                        state={level.sender.state}
+                        value={submittedData.sender}
+                        label={level.sender.label}
+                        delay={index * 0.15 + 0.5}
+                      />
+                      <DataCell
+                        state={level.receiver.state}
+                        value={submittedData.receiver}
+                        label={level.receiver.label}
+                        delay={index * 0.15 + 0.6}
+                      />
+                      <DataCell
+                        state={level.amount.state}
+                        value={submittedData.amount}
+                        label={level.amount.label}
+                        delay={index * 0.15 + 0.7}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </motion.div>
@@ -550,66 +682,71 @@ export default function App() {
 
       {/* Signature */}
       <motion.footer
-        className="relative z-10 mt-12 pb-6 text-center"
+        className="relative z-10 mt-16 pb-8 text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <p className="text-xs md:text-sm" style={{ color: colors['inco-light-blue'], opacity: 0.7 }}>
-          made by{' '}
-          <a 
-            href="https://t.me/sapiensp" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="underline hover:opacity-80 transition-opacity"
-            style={{ color: colors['inco-light-blue'] }}
-          >
-            sapiensp
-          </a>
-        </p>
+        <div className="relative inline-block">
+          {/* Decorative lines */}
+          <div className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+          
+          <div className="relative bg-background px-6 py-3 rounded-lg border border-primary/20 backdrop-blur-sm">
+            <p className="text-xs md:text-sm flex items-center gap-2 justify-center" style={{ color: colors['inco-light-blue'] }}>
+              <span className="opacity-50">{'<'}</span>
+              made by{' '}
+              <a 
+                href="https://t.me/sapiensp" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-semibold hover:text-primary transition-colors relative group"
+                style={{ color: colors['inco-light-blue'] }}
+              >
+                sapiensp
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>
+              </a>
+              <span className="opacity-50">{'/>'}</span>
+            </p>
+          </div>
+        </div>
       </motion.footer>
     </div>
   );
 }
 
-// Helper component for styled input
+// Helper component for styled input with futuristic design
 const InputGroup = ({ label, name, value, onChange, placeholder, error }) => {
-  const borderColor = error ? '#EF4444' : colors['inco-blue'];
-  const focusBorderColor = error ? '#EF4444' : colors['inco-light-blue'];
-  
   return (
-    <div className="flex flex-col space-y-1">
-      <label htmlFor={name} className="text-sm font-medium" style={{ color: colors['inco-dark'] }}>
+    <div className="flex flex-col space-y-2 group">
+      <Label htmlFor={name} className="flex items-center gap-2">
+        <Zap className="w-3 h-3 text-primary animate-pulse" />
         {label}
-      </label>
-      <input
-        id={name}
-        name={name}
-        type="text"
-        value={value}
-        onChange={onChange}
-        className="p-3 rounded-lg focus:ring-2 outline-none transition-all border-2"
-        style={{ 
-          color: colors['inco-dark'],
-          backgroundColor: '#FFFFFF',
-          borderColor: borderColor,
-          focusRingColor: focusBorderColor,
-          focusBorderColor: focusBorderColor
-        }}
-        placeholder={placeholder || `Enter ${label}`}
-        onFocus={(e) => {
-          e.target.style.borderColor = focusBorderColor;
-          e.target.style.boxShadow = `0 0 0 2px ${focusBorderColor}40`;
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = borderColor;
-          e.target.style.boxShadow = 'none';
-        }}
-      />
+      </Label>
+      <div className="relative">
+        <Input
+          id={name}
+          name={name}
+          type="text"
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder || `Enter ${label}`}
+          className={error ? "border-destructive focus-visible:ring-destructive" : ""}
+        />
+        {/* Futuristic corner accents */}
+        <div className="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-primary opacity-60"></div>
+        <div className="absolute -top-1 -right-1 w-2 h-2 border-t-2 border-r-2 border-primary opacity-60"></div>
+        <div className="absolute -bottom-1 -left-1 w-2 h-2 border-b-2 border-l-2 border-primary opacity-60"></div>
+        <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-primary opacity-60"></div>
+      </div>
       {error && (
-        <span className="text-xs mt-1" style={{ color: '#EF4444' }}>
+        <motion.span 
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-xs text-destructive flex items-center gap-1"
+        >
+          <EyeOff className="w-3 h-3" />
           {error}
-        </span>
+        </motion.span>
       )}
     </div>
   );
